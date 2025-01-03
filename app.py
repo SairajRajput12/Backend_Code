@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 import pyrebase
 
+
 load_dotenv()
 
 app = Flask(__name__)
