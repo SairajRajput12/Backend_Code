@@ -53,15 +53,16 @@ def signup_form():
     print(password)
     # Firebase configuration
     firebaseConfig = {
-        'apiKey': "AIzaSyB-8Fr21l86yB0d3PfMHi8dV0aU1JncbEM",
-        'authDomain': "authentication-6a979.firebaseapp.com",
-        'projectId': "authentication-6a979",
-        'storageBucket': "authentication-6a979.firebasestorage.app",
-        'messagingSenderId': "160211766425",
-        'appId': "1:160211766425:web:7bc5fcfe5eca1caa34fc08",
-        'measurementId': "G-X0W4JNX7Z0",
-        'databaseURL':""
+        'apiKey': os.getenv('API_KEY'),
+        'authDomain': os.getenv('AUTH_DOMAIN'),
+        'projectId': os.getenv('PROJECT_ID'),
+        'storageBucket': os.getenv('STORAGE_BUCKET'),
+        'messagingSenderId': os.getenv('MESSAGING_SENDER_ID'),
+        'appId': os.getenv('APP_ID'),
+        'measurementId': os.getenv('MEASUREMENT_ID'),
+        'databaseURL': os.getenv('DATABASE_URL')
     }
+
 
     print(firebaseConfig)
 
