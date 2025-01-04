@@ -19,7 +19,7 @@ quiz_map = {}
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
-socketio = SocketIO(app, cors_allowed_origins="*")  # Ensure CORS is enabled for SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 
 firebaseConfig = {
@@ -99,7 +99,7 @@ def start_quiz():
     
     "Code to Start the quiz" 
     number_of_quizzes_conducted = len(quiz_map.get(username, []))
-    quiz_id = f"{username}quiz{number_of_quizzes_conducted}"   # it will generate unique id to quiz 
+    quiz_id = f"{username}quiz{number_of_quizzes_conducted}"    
     user_data = {
         'QuizId':quiz_id,
         'Quiz': mcq,
@@ -113,7 +113,7 @@ def start_quiz():
     
     
     
-    correct_answer = mcq['quiz'][0]['answer']
+    correct_answer = mcq[0]['answer']
     quiz_map[username] = quiz_map.get(username, {})
     
     quiz_map[username][quiz_id] = {
@@ -124,7 +124,6 @@ def start_quiz():
     }
 
     
-    # code to make all the users default scores to 0 
     number_of_questions = len(mcq['quiz'])  
     
     for user in users:
