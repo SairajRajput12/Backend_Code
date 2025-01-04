@@ -27,6 +27,8 @@ firebaseConfig = {
     'databaseURL': os.getenv('DATABASE_URL')
 }
 
+print(firebaseConfig)
+
 # Initialize Firebase
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
@@ -43,10 +45,32 @@ def home():
 
 
 @app.route('/signup', methods=['POST'])
-def signup():
+def signup_form():
     data = request.json
     email = data.get('email')
     password = data.get('password')
+    print(email) 
+    print(password)
+    # Firebase configuration
+    firebaseConfig = {
+        'apiKey': "AIzaSyB-8Fr21l86yB0d3PfMHi8dV0aU1JncbEM",
+        'authDomain': "authentication-6a979.firebaseapp.com",
+        'projectId': "authentication-6a979",
+        'storageBucket': "authentication-6a979.firebasestorage.app",
+        'messagingSenderId': "160211766425",
+        'appId': "1:160211766425:web:7bc5fcfe5eca1caa34fc08",
+        'measurementId': "G-X0W4JNX7Z0",
+        'databaseURL':""
+    }
+
+    print(firebaseConfig)
+
+    # Initialize Firebase
+    firebase = pyrebase.initialize_app(firebaseConfig)
+    auth = firebase.auth()
+    
+    
+
 
     if not email or not password:
         return jsonify({"error": "No Data provided !!"}), 400
@@ -55,7 +79,7 @@ def signup():
         user = auth.create_user_with_email_and_password(email=email, password=password)
         return jsonify({"message": "User created successfully!", "uid": user['localId']}), 201
     except:
-        return jsonify({"message": "unable to signup"}), 400
+        return jsonify({"message": "Weak Password."}), 400
 
 
 @app.route('/login', methods=['POST'])
@@ -63,12 +87,11 @@ def login():
     data = request.json
     email = data.get('email')
     password = data.get('password')
-
     if not email or not password:
         return jsonify({"error": "No Data provided !!"}), 400
 
     try:
-        user = auth.sign_in_with_email_and_password(email=email, password=password)
+        user = auth.sign_in_with_email_and_password(email,password)
         return jsonify({"message": "Login successfully!", "uid": user['localId']}), 200
     except:
         return jsonify({"message": "unable to login"}), 400
