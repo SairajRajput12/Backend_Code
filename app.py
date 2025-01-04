@@ -96,7 +96,12 @@ def start_quiz():
         return jsonify({'error': 'Missing data'}), 400
 
     db = firebase.database()
+    
+    "Code to Start the quiz" 
+    number_of_quizzes_conducted = len(quiz_map.get(username, []))
+    quiz_id = f"{username}quiz{number_of_quizzes_conducted}"   # it will generate unique id to quiz 
     user_data = {
+        'QuizId':quiz_id,
         'Quiz': mcq,
         'time': time,
         'status': 'ongoing',
@@ -106,9 +111,6 @@ def start_quiz():
 
     db.child('Users').child(username).child('Quizes Attended').push(user_data)
     
-    "Code to Start the quiz" 
-    number_of_quizzes_conducted = len(quiz_map.get(username, []))
-    quiz_id = f"quiz{number_of_quizzes_conducted}"   # it will generate unique id to quiz 
     
     
     correct_answer = mcq['quiz'][0]['answer']
@@ -130,6 +132,49 @@ def start_quiz():
         
     return jsonify({'message': 'Quiz Started Successfully!'})
 
+@app.route('/end_game', methods=['POST'])
+def end_game():
+    data = request.json
+    quiz_id = data.get('quiz_id')
+    hostname = data.get('hostname')
+
+    if not quiz_id or not hostname:
+        return jsonify({'error': 'Missing hostname or quiz_id'}), 400
+
+    # Check if the quiz exists in the quiz_map
+    if hostname not in quiz_map or quiz_id not in quiz_map[hostname]:
+        return jsonify({'error': 'Quiz not found'}), 404
+
+    quiz_data = quiz_map[hostname][quiz_id]
+    user_scores = quiz_data['users']
+
+    # Calculate the total score for each user
+    final_scores = {user: sum(scores) for user, scores in user_scores.items()}
+
+    # Determine the winner(s)
+    max_score = max(final_scores.values())
+    winners = [user for user, score in final_scores.items() if score == max_score]
+
+    # Update Firebase with the results
+    db = firebase.database()
+    db.child('Users').child(hostname).child('Quizes Attended').child(quiz_id).update({
+        'status': 'finished',
+        'winner': ', '.join(winners),  
+        'final_scores': final_scores  
+    })
+
+    # Remove the quiz from quiz_map
+    del quiz_map[hostname][quiz_id]
+
+    return jsonify({
+        'message': 'Game ended successfully!',
+        'winners': winners,
+        'final_scores': final_scores
+    }),200
+
+    
+    
+    
 
 
 @app.route('/read_data', methods=['POST'])
