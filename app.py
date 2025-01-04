@@ -108,7 +108,7 @@ def read_data():
 
 
 @app.route('/generate_data_ai', methods=['POST'])
-def read_data():
+def generate_by_ai_data():
     data = request.json
     questionno = data.get('questionno')
     quiz = data.get('type')
