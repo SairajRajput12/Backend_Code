@@ -3,8 +3,10 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 import pyrebase
+import google.generativeai as genai
 
 
+# backend url: https://backend-code-ngs0.onrender.com/
 load_dotenv()
 
 app = Flask(__name__)
@@ -100,13 +102,32 @@ def read_data():
     db = firebase.database()
     users = db.child('Users').child('sairajrajput').get()
 
-    data = users.val()
+    result_data = users.val()
 
-    return jsonify({'message': 'Data pushed successfully!','data':data})
+    return jsonify({'message': 'Data pushed successfully!','data':result_data})
 
 
-
+@app.route('/generate_data_ai', methods=['POST'])
+def read_data():
+    data = request.json
+    questionno = data.get('questionno')
+    quiz = data.get('type')
     
+    
+    if not questionno or not quiz:
+        return jsonify({'error': 'Missing questionno'}), 400
+
+    # code to generate the ai based question
+    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    response = model.generate_content(f"Generate {questionno} {quiz} mcq based questions in json formate")
+
+    result_data = response.text
+
+    return jsonify({'message': 'Data pushed successfully!','data':result_data})
+
+
+
     
     
 
