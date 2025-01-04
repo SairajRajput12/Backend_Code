@@ -12,7 +12,7 @@ from collections import defaultdict
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins
+CORS(app, resources={r"/*": {"origins": "*"}})
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Firebase configuration
@@ -54,8 +54,8 @@ def signup():
     try:
         user = auth.create_user_with_email_and_password(email=email, password=password)
         return jsonify({"message": "User created successfully!", "uid": user['localId']}), 201
-    except pyrebase.pyrebase.FirebaseException as e:
-        return jsonify({"error": str(e)}), 400
+    except:
+        return jsonify({"message": "unable to signup"}), 400
 
 
 @app.route('/login', methods=['POST'])
@@ -70,8 +70,8 @@ def login():
     try:
         user = auth.sign_in_with_email_and_password(email=email, password=password)
         return jsonify({"message": "Login successfully!", "uid": user['localId']}), 200
-    except pyrebase.pyrebase.FirebaseException as e:
-        return jsonify({"error": str(e)}), 400
+    except:
+        return jsonify({"message": "unable to login"}), 400
 
 
 @app.route('/add_data', methods=['POST'])
