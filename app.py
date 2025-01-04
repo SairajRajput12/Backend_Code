@@ -124,12 +124,12 @@ def start_quiz():
     }
 
     
-    number_of_questions = len(mcq['quiz'])  
+    number_of_questions = len(mcq)  
     
     for user in users:
         quiz_map[username][quiz_id]['users'][user] = [0] * number_of_questions
         
-    return jsonify({'message': 'Quiz Started Successfully!'})
+    return jsonify({'message': 'Quiz Started Successfully!','quiz':mcq})
 
 @app.route('/end_game', methods=['POST'])
 def end_game():
