@@ -105,5 +105,10 @@ def read_data():
     return jsonify({'message': 'Data pushed successfully!','data':data})
 
 
+
+    
+    
+    
+
 if __name__ == "__main__":
     app.run(debug=True)
