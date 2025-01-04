@@ -19,7 +19,7 @@ quiz_map = {}
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*")  # Ensure CORS is enabled for SocketIO
 
 
 firebaseConfig = {
@@ -89,7 +89,7 @@ def start_quiz():
     time = data.get('time')
     mcq = data.get('mcq')
     users = data.get('users')
-
+    print(mcq)
     
     
     if not username or not time or not mcq or not users:
@@ -219,7 +219,7 @@ def generate_by_ai_data():
 
 # code socket logic
 # Handle user joining the game
-@socketio.on('connect') 
+@socketio.on('user_joined') 
 def handle_user_join(data): 
     username = data.get('username') 
     
@@ -231,7 +231,7 @@ def handle_user_join(data):
     emit('user_joined', {'message': f"{username} has joined the game!"}, broadcast=True)
 
 # Handle user leaving the game
-@socketio.on('disconnect') 
+@socketio.on('user_leaved') 
 def handle_user_leave(data): 
     username = data.get('username') 
     
