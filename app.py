@@ -123,7 +123,7 @@ def start_quiz():
         'winner': ''
     }
 
-    db.child('Users').child(username).child('Quizes Attended').push(user_data)
+    db.child('Users').child(username).child('Quizes Attended').set(quiz_id).push(user_data)
     
     correct_answer = mcq[0]['answer']
     
