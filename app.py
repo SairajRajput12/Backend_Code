@@ -120,8 +120,9 @@ def start_quiz():
         'visible user emails': users, 
         'winner': ''
     }
+    print(user_data)
 
-    db.child('Users').child(username).child('Quizes Attended').push(quiz_id).push(user_data)
+    db.child('Users').child(username).child('Quizes Attended').child(quiz_id).push(user_data)
     
     correct_answer = mcq[0]['answer']
     
