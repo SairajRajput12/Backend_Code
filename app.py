@@ -6,7 +6,7 @@ import pyrebase
 import google.generativeai as genai
 from flask_socketio import SocketIO, emit
 from collections import defaultdict
-
+import json
 
 # Load environment variables
 load_dotenv()
@@ -213,14 +213,18 @@ def generate_by_ai_data():
 
     # Configure Gemini API
     genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    model = genai.GenerativeModel('gemini-1.5-flash-latest',generation_config={"response_mime_type":"application/json"})
     
     # Generate questions using Gemini AI
-    response = model.generate_content(f"Generate {questionno} {quiz} mcq based questions in [{'title':'','options':[''],'answer':1}] as a variable to use in project. answer is correct option number")
+    response = model.generate_content(f"Generate {questionno} {quiz} multiple-choice questions in the following format: [{'title': 'question text', 'options': ['option 1', 'option 2', 'option 3'], 'answer': 'correct_option_number'}]. The correct_option_number should be the index (1-based) of the correct answer in the options list")
 
     result_data = response.text
+    try:
+        questions = json.loads(response.text)
+    except json.JSONDecodeError:
+        print("Error: The response is not valid JSON.")
 
-    return jsonify({'message': 'Questions generated successfully!', 'data': result_data})
+    return jsonify({'message': 'Questions generated successfully!', 'data': questions})
 
 
 # Socket logic
