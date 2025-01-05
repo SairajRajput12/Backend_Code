@@ -108,7 +108,7 @@ def start_quiz():
         return jsonify({'error': 'Missing data'}), 400
 
     db = firebase.database()
-    
+    print(mcq)
     # Start quiz logic
     number_of_quizzes_conducted = len(quiz_map.get(username, []))
     quiz_id = f"{username}quiz{number_of_quizzes_conducted}"    
