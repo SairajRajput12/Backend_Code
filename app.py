@@ -27,8 +27,6 @@ firebaseConfig = {
     'databaseURL': os.getenv('DATABASE_URL')
 }
 
-print(firebaseConfig)
-
 # Initialize Firebase
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
@@ -123,7 +121,7 @@ def start_quiz():
         'winner': ''
     }
 
-    db.child('Users').child(username).child('Quizes Attended').set(quiz_id).push(user_data)
+    db.child('Users').child(username).child('Quizes Attended').push(quiz_id).push(user_data)
     
     correct_answer = mcq[0]['answer']
     
