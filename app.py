@@ -7,6 +7,8 @@ import google.generativeai as genai
 from flask_socketio import SocketIO, emit
 from collections import defaultdict
 import json
+import re
+
 
 # Load environment variables
 load_dotenv()
@@ -32,7 +34,7 @@ firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
 
 # Initialize quiz map
-quiz_map = defaultdict(dict)
+quiz_map = {}
 
 
 # Routes
@@ -95,9 +97,9 @@ def login():
     except:
         return jsonify({"message": "unable to login"}), 400
 
-
 @app.route('/add_data', methods=['POST'])
 def start_quiz():
+    # Extract data from the request
     data = request.json
     username = data.get('username')
     time = data.get('time')
@@ -105,14 +107,31 @@ def start_quiz():
     users = data.get('users')
     title = data.get('title')
     
-    if not username or not time or not mcq or not users:
+    # Check if required data is present
+    if not username or not time or not mcq or not users or not title:
         return jsonify({'error': 'Missing data'}), 400
 
+    # Validate time and quiz data
+    if not isinstance(time, int) or time <= 0:
+        return jsonify({'error': 'Invalid time format. Time should be a positive integer'}), 400
+
+    if not isinstance(mcq, list) or len(mcq) == 0:
+        return jsonify({'error': 'Invalid MCQ format. MCQ should be a non-empty list'}), 400
+
+    if not isinstance(users, list) or len(users) == 0:
+        return jsonify({'error': 'Invalid users format. Users should be a non-empty list'}), 400
+
+    if not isinstance(title, str) or not title.strip():
+        return jsonify({'error': 'Invalid title format. Title should be a non-empty string'}), 400
+
+    # Initialize Firebase DB
     db = firebase.database()
-    print(mcq)
+    
     # Start quiz logic
     number_of_quizzes_conducted = len(quiz_map.get(username, []))
-    quiz_id = f"{username}quiz{number_of_quizzes_conducted}"    
+    quiz_id = f"{username}quiz{number_of_quizzes_conducted}"
+
+    # Prepare quiz data
     user_data = {
         'QuizId': quiz_id,
         'Quiz': mcq,
@@ -120,16 +139,29 @@ def start_quiz():
         'status': 'ongoing',
         'visible user emails': users, 
         'winner': '', 
-        'title':title
+        'title': title
     }
-    print(user_data)
 
-    db.child('Users').child(username).child('Quizes Attended').child(quiz_id).push(user_data)
-    for user in users: 
-        db.child('Users').child(user).child('Your Quizes').child(quiz_id).push(user_data)
-    
-    correct_answer = mcq[0]['answer']
-    
+    # Push the quiz data to the database for the host (quiz creator)
+    try:
+        db.child('Users').child(username).child('Quizes Attended').child(quiz_id).push(user_data)
+    except Exception as e:
+        return jsonify({'error': f'Error adding quiz for host: {str(e)}'}), 500
+
+    # Push the quiz data to the database for each participant
+    for user in users:
+        try:
+            db.child('Users').child(user).child('Your Quizes').child(quiz_id).push(user_data)
+        except Exception as e:
+            return jsonify({'error': f'Error adding quiz for user {user}: {str(e)}'}), 500
+
+    # Handle correct answer and quiz map logic
+    correct_answer = mcq[0].get('answer')
+    if not correct_answer:
+        return jsonify({'error': 'MCQ does not contain a valid answer field'}), 400
+
+    # Initialize quiz map for the host and participants
+    quiz_map[username] = quiz_map.get(username, {})
     quiz_map[username][quiz_id] = {
         'users': {}, 
         'correct_answer': correct_answer, 
@@ -137,12 +169,13 @@ def start_quiz():
         'time_remaining': time
     }
 
-    number_of_questions = len(mcq)  
-    
+    # Initialize scores for all users in this quiz
+    number_of_questions = len(mcq)
     for user in users:
         quiz_map[username][quiz_id]['users'][user] = [0] * number_of_questions
-        
-    return jsonify({'message': 'Quiz Started Successfully!', 'quiz': mcq})
+
+    # Return success message with quiz data
+    return jsonify({'message': 'Quiz Started Successfully!', 'quiz': mcq}), 200
 
 
 @app.route('/end_game', methods=['POST'])
@@ -150,20 +183,18 @@ def end_game():
     data = request.json
     quiz_id = data.get('quiz_id')
     hostname = data.get('hostname')
-
+    print(quiz_id) 
+    print(hostname)
     if not quiz_id or not hostname:
         return jsonify({'error': 'Missing hostname or quiz_id'}), 400
 
-    # Check if the quiz exists
-    if hostname not in quiz_map or quiz_id not in quiz_map[hostname]:
-        return jsonify({'error': 'Quiz not found'}), 404
 
     quiz_data = quiz_map[hostname][quiz_id]
     user_scores = quiz_data['users']
 
     # Calculate scores
     final_scores = {user: sum(scores) for user, scores in user_scores.items()}
-
+    print(final_scores)
     # Determine winners
     max_score = max(final_scores.values())
     winners = [user for user, score in final_scores.items() if score == max_score]
@@ -203,6 +234,30 @@ def read_data():
         return jsonify({'message': 'Data fetched successfully!', 'data': result_data})
     else:
         return jsonify({'error': 'User data not found'}), 404
+
+
+@app.route('/quiz_data', methods=['POST'])
+def get_quiz_data():
+    data = request.json
+    quizId = data.get('quizId')
+    username = data.get('username')
+    
+    if not username or not quizId:
+        return jsonify({'error': 'Missing Data'}), 400
+
+    pattern = r"quiz\w*"
+    hostId = re.sub(pattern, "", quizId)
+    print(pattern)
+    db = firebase.database()
+    quiz_data = db.child('Users').child(hostId).child('Your Quizes').get(quizId)  
+
+    result_data = quiz_data.val()
+    print(result_data)
+    if result_data:
+        return jsonify({'message': 'Data fetched successfully!', 'data': result_data[quizId],'hostname':hostId})
+    else:
+        return jsonify({'error': 'User data not found'}), 404
+
 
 
 @app.route('/generate_data_ai', methods=['POST'])
@@ -257,19 +312,59 @@ def handle_user_leave(data):
     
     emit('user_left', {'message': f"{username} has left the game!"}, broadcast=True)
 
+@app.route('/leaderboard',methods=['POST']) 
+def give_leaderboard(): 
+    data = request.json 
+    hostname = data.get('hostname') 
+    quiz_id = data.get('quiz_id')
+    print(hostname) 
+    print(quiz_id)
+    
+    if not hostname or not quiz_id:
+        emit('error', {'message': 'hostname is required.'}, broadcast=True)
+        return
+
+    users_data = quiz_map[hostname][quiz_id]['users'] 
+    print(users_data)
+    return jsonify({'message':'data recieved succesfully !','data':users_data}),200
+    
+
+
+
+
+
+
 
 @socketio.on('submit_answer')
-def submit_answer(data): 
+def submit_answer(data):
     current_question_index = data.get('current_index')
-    username = data.get('username') 
-    answer = data.get('answer_submitted') 
-    hostname = data.get('hostname') 
-    correct = data.get('correct_answer') 
+    username = data.get('username')
+    answer = data.get('answer_submitted')
+    hostname = data.get('hostname')
+    correct = data.get('correct_answer')
     quiz_id = data.get('quiz_id')
+    number_of_questions = data.get('number_of_questions')
     
-    if answer == correct: 
+    print(answer)
+    print(correct)
+    
+
+    if hostname not in quiz_map:
+        quiz_map[hostname] = {}
+
+    if quiz_id not in quiz_map[hostname]:
+        quiz_map[hostname][quiz_id] = {'users': {}}
+
+    if username not in quiz_map[hostname][quiz_id]['users']:
+        quiz_map[hostname][quiz_id]['users'][username] =  [0] * number_of_questions
+
+
+    if str(answer) == str(correct):
+        print(quiz_map)
         quiz_map[hostname][quiz_id]['users'][username][current_question_index] += 1
-    
+
+    print('Submitted answer of user')
+    print(quiz_map)
     emit('user_submit', {'message': f"Submitted answer!"}, broadcast=True)
 
 
