@@ -216,7 +216,7 @@ def generate_by_ai_data():
     model = genai.GenerativeModel('gemini-1.5-flash-latest')
     
     # Generate questions using Gemini AI
-    response = model.generate_content(f"Generate {questionno} {quiz} mcq based questions in json format")
+    response = model.generate_content(f"Generate {questionno} {quiz} mcq based questions in [{'title':'','options':[''],'answer':1}] as a variable to use in project. answer is correct option number")
 
     result_data = response.text
 
