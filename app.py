@@ -103,6 +103,7 @@ def start_quiz():
     time = data.get('time')
     mcq = data.get('mcq')
     users = data.get('users')
+    title = data.get('title')
     
     if not username or not time or not mcq or not users:
         return jsonify({'error': 'Missing data'}), 400
@@ -118,11 +119,14 @@ def start_quiz():
         'time': time,
         'status': 'ongoing',
         'visible user emails': users, 
-        'winner': ''
+        'winner': '', 
+        'title':title
     }
     print(user_data)
 
     db.child('Users').child(username).child('Quizes Attended').child(quiz_id).push(user_data)
+    for user in users: 
+        db.child('Users').child(user).child('Your Quizes').child(quiz_id).push(user_data)
     
     correct_answer = mcq[0]['answer']
     
@@ -191,10 +195,10 @@ def read_data():
         return jsonify({'error': 'Missing Username'}), 400
 
     db = firebase.database()
-    users = db.child('Users').child(username).get()  # Use dynamic username
+    users = db.child('Users').child(username).child('Your Quizes').get()  
 
     result_data = users.val()
-
+    print(result_data)
     if result_data:
         return jsonify({'message': 'Data fetched successfully!', 'data': result_data})
     else:
