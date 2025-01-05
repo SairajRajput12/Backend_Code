@@ -213,19 +213,24 @@ def generate_by_ai_data():
 
     # Configure Gemini API
     genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('gemini-1.5-flash-latest',generation_config={"response_mime_type":"application/json"})
+    model = genai.GenerativeModel('gemini-1.5-flash-latest', generation_config={"response_mime_type": "application/json"})
     
     # Generate questions using Gemini AI
-    response = model.generate_content(f"Generate {questionno} {quiz} multiple-choice questions in the following format: [{'title': 'question text', 'options': ['option 1', 'option 2', 'option 3'], 'answer': 'correct_option_number'}]. The correct_option_number should be the index (1-based) of the correct answer in the options list")
+    prompt = (
+        f"Generate {questionno} {quiz} multiple-choice questions in the following format: "
+        f"[{{'title': 'question text', 'options': ['option 1', 'option 2', 'option 3'], 'answer': 'correct_option_number'}}]. "
+        "The correct_option_number should be the index (1-based) of the correct answer in the options list."
+    )
+    
+    response = model.generate_content(prompt)
 
     result_data = response.text
     try:
-        questions = json.loads(response.text)
+        questions = json.loads(result_data)
     except json.JSONDecodeError:
         print("Error: The response is not valid JSON.")
 
     return jsonify({'message': 'Questions generated successfully!', 'data': questions})
-
 
 # Socket logic
 @socketio.on('user_joined') 
