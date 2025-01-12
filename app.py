@@ -94,6 +94,7 @@ def login():
         return jsonify({"error": "No Data provided !!"}), 400
 
     try:
+        print(firebaseConfig)
         user = auth.sign_in_with_email_and_password(email,password)
         print(user)
         return jsonify({"message": "Login successfully!", "uid": user['localId']}), 200
