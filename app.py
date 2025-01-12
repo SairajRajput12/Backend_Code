@@ -14,7 +14,7 @@ import re
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "https://sairajrajput12.github.io/Fixit_Assignment/*"}})
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Firebase configuration
