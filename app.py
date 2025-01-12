@@ -86,24 +86,25 @@ def signup_form():
     except:
         return jsonify({"message": "Weak Password."}), 400
 
-
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.json
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid or missing JSON payload"}), 400
+
     email = data.get('email')
     password = data.get('password')
-    # print(email) 
-    # print(password)
+
     if not email or not password:
-        return jsonify({"error": "No Data provided !!"}), 400
+        return jsonify({"error": "Email and password are required"}), 400
 
     try:
-        # print(firebaseConfig)
-        user = auth.sign_in_with_email_and_password(email,password)
-        # print(user)
+        user = auth.sign_in_with_email_and_password(email, password)
         return jsonify({"message": "Login successfully!", "uid": user['localId']}), 200
-    except:
-        return jsonify({"message": "unable to login"}), 400
+    except Exception as e:
+        print("Firebase Error:", e)  # Log the error for debugging
+        return jsonify({"error": "Unable to login", "details": str(e)}), 400
+
 
 @app.route('/add_data', methods=['POST'])
 def start_quiz():
